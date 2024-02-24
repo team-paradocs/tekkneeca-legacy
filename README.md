@@ -6,20 +6,20 @@ Assistive Robot for Total Knee Arthroplasty
 - Clone the package
 
         cd ~/<ros2_ws>/src
-        git clone 
+        git clone
+
+- Install submodules.
+
+        cd ~/<ros2_ws>/src/tekkneeca
+        git submodule init
+        git submodule update
 
 - Build the packages
 
         cd ~/<ros2_ws>
         colcon build
 
-- Add in environment
+- source environment
 
         source ~/<ros2_ws>/src/tekkneeca/install/setup.bash
 
-- Install submodules.
-
-
-        cd ~/<ros2_ws>/src/tekkneeca
-        git submodule init
-        git submodule update
