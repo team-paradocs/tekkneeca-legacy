@@ -6,7 +6,7 @@ Assistive Robot for Total Knee Arthroplasty
 - Clone the package
 
         cd ~/<ros2_ws>/src
-        git clone
+        git clone git@github.com:team-paradocs/tekkneeca.git
 
 - Install submodules.
 
