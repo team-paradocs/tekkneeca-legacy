@@ -1,0 +1,8 @@
+[submodule "fri_vendor"]
+	path = fri_vendor
+	url = https://github.com/lbr-stack/fri_vendor
+	branch = ros2
+[submodule "lbr_fri_ros2_stack"]
+	path = lbr_fri_ros2_stack
+	url = git@github.com:team-paradocs/lbr_fri_ros2_stack.git
+	branch = humble
