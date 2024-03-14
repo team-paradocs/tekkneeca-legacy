@@ -11,15 +11,20 @@ def launch_setup(context, *args, **kwargs):
 
     arg_name = DeclareLaunchArgument('name')
 
+    # node_dummy_calib_eih = Node(package='tf2_ros', executable='static_transform_publisher', name='dummy_publisher',
+    #                             condition=LaunchConfigurationEquals('calibration_type', 'eye_in_hand'),
+    #                             arguments=f'--x 0 --y 0 --z 0 --qx 0 --qy 0 --qz 0 --qw 1'.split(' ') + ['--frame-id', LaunchConfiguration('robot_effector_frame'),
+    #                                                                                                        '--child-frame-id', LaunchConfiguration('tracking_base_frame')])
+   
     node_dummy_calib_eih = Node(package='tf2_ros', executable='static_transform_publisher', name='dummy_publisher',
                                 condition=LaunchConfigurationEquals('calibration_type', 'eye_in_hand'),
-                                arguments=f'--x 0 --y 0 --z 0.1 --qx 0 --qy 0 --qz 0 --qw 1'.split(' ') + ['--frame-id', LaunchConfiguration('robot_effector_frame'),
+                                arguments=f'--x 0.05 --y 0 --z 0.16 --qx 0.7071 --qy 0 --qz 0.7071 --qw 0'.split(' ') + ['--frame-id', LaunchConfiguration('robot_effector_frame'),
                                                                                                            '--child-frame-id', LaunchConfiguration('tracking_base_frame')])
 
-    node_dummy_calib_eob = Node(package='tf2_ros', executable='static_transform_publisher', name='dummy_publisher',
-                                condition=LaunchConfigurationEquals('calibration_type', 'eye_on_base'),
-                                arguments=f'--x 1 --y 0 --z 0 --qx 0 --qy 0 --qz 0 --qw 1'.split(' ') + ['--frame-id', LaunchConfiguration('robot_base_frame'),
-                                                                                                         '--child-frame-id', LaunchConfiguration('tracking_base_frame')])
+    # node_dummy_calib_eob = Node(package='tf2_ros', executable='static_transform_publisher', name='dummy_publisher',
+    #                             condition=LaunchConfigurationEquals('calibration_type', 'eye_on_base'),
+    #                             arguments=f'--x 1 --y 0 --z 0 --qx 0 --qy 0 --qz 0 --qw 1'.split(' ') + ['--frame-id', LaunchConfiguration('robot_base_frame'),
+    #                                                                                                      '--child-frame-id', LaunchConfiguration('tracking_base_frame')])
 
     handeye_server = Node(package='easy_handeye2', executable='handeye_server', name='handeye_server', parameters=[{
         'name': LaunchConfiguration('name'),
@@ -50,7 +55,7 @@ def launch_setup(context, *args, **kwargs):
         arg_robot_base_frame,
         arg_robot_effector_frame,
         node_dummy_calib_eih,
-        node_dummy_calib_eob,
+        # node_dummy_calib_eob,
         handeye_server,
         handeye_rqt_calibrator,
     ]

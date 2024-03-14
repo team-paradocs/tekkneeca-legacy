@@ -1,34 +1,17 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, RegisterEventHandler
+from launch.actions import IncludeLaunchDescription, RegisterEventHandler, DeclareLaunchArgument
+
 from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnIncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
+from launch_ros.actions import Node
 
 from lbr_description import LBRDescriptionMixin, RVizMixin
 
-
 def generate_launch_description() -> LaunchDescription:
     ld = LaunchDescription()
-
-    ld.add_action(LBRDescriptionMixin.arg_sim())
-
-    ld.add_action(
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare("realsense2_camera"),
-                        "launch",
-                        "rs_launch.py",
-                    ]
-                )
-            ),
-            
-        )
-    )
-
 
     ld.add_action(
         IncludeLaunchDescription(
@@ -43,20 +26,28 @@ def generate_launch_description() -> LaunchDescription:
             ),
         )
     )
-    
-    # ld.add_action(
-    #     IncludeLaunchDescription(
-    #         PythonLaunchDescriptionSource(
-    #             PathJoinSubstitution(
-    #                 [
-    #                     FindPackageShare("paradocs_controls"),
-    #                     "launch",
-    #                     "calibrate.launch.py",
-    #                 ]
-    #             )
-    #         ),
-            
-    #     )
-    # )
 
+    ld.add_action(
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare("paradocs_controls"),
+                        "launch",
+                        "rs_launch.py",
+                    ]
+                )
+            ),
+        )
+    )
+
+
+    arg_name = DeclareLaunchArgument('name', default_value='eih_cam1')
+
+    handeye_publisher = Node(package='easy_handeye2', executable='handeye_publisher', name='handeye_publisher', parameters=[{
+        'name': LaunchConfiguration('name'),
+    }])
+
+    ld.add_action(arg_name)
+    ld.add_action(handeye_publisher) 
     return ld

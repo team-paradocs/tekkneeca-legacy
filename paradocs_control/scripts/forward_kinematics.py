@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import rclpy
 from control_msgs.action import FollowJointTrajectory
 from rclpy.action import ActionClient
@@ -94,3 +95,6 @@ def main(args: list = None) -> None:
     )
 
     rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
