@@ -14,6 +14,10 @@ Assistive Robot for Total Knee Arthroplasty
         git submodule init
         git submodule update
 
+- (Optional) fetch latest commit for submodule
+
+        git submodule update --remote --merge
+
 - Build the packages
 
         cd ~/<ros2_ws>
