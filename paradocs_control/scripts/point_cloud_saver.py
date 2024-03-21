@@ -26,29 +26,34 @@ class PointCloudSaver(Node):
 
 
     def process_point_cloud(self, ros_point_cloud):
-        xyz = np.array([[0, 0, 0]])
-        rgb = np.array([[0, 0, 0]])
+        xyz = []
+        rgb = []
 
-        gen = pc2.read_points(ros_point_cloud, skip_nans=True)
-        int_data = list(gen)
+        # gen = pc2.read_points(ros_point_cloud, skip_nans=True)
 
-        for x in int_data:
+        gen = pc2.read_points(ros_point_cloud, skip_nans=True, field_names=("x", "y", "z", "rgb"))
+
+        for x in gen:
             # self.get_logger().info("In loop")
-            test = x[3]
+            color = x[3]
             # cast float32 to int so that bitwise operations are possible
-            s = struct.pack('>f', test)
+            s = struct.pack('>f', color)
             i = struct.unpack('>l', s)[0]
             # you can get back the float value by the inverse operations
             pack = ctypes.c_uint32(i).value
+
             r = (pack & 0x00FF0000) >> 16
             g = (pack & 0x0000FF00) >> 8
             b = (pack & 0x000000FF)
-            xyz = np.append(xyz, [[x[0], x[1], x[2]]], axis=0)
-            rgb = np.append(rgb, [[r, g, b]], axis=0)
+
+            # print(r/255.0, g/255.0, b/255.0)
+            xyz.append([x[0], x[1], x[2]])
+            rgb.append([r/225.0, g/255.0, b/255.0])
+        
 
         out_pcd = o3d.geometry.PointCloud()
-        out_pcd.points = o3d.utility.Vector3dVector(xyz[1:])  # Skip the first dummy entry
-        out_pcd.colors = o3d.utility.Vector3dVector(rgb[1:])  # Adjust color to be in the range [0,1]
+        out_pcd.points = o3d.utility.Vector3dVector(np.array(xyz))
+        out_pcd.colors = o3d.utility.Vector3dVector(np.array(rgb).astype(np.float64))
         o3d.io.write_point_cloud("/home/paradocs/cloud.ply", out_pcd)
 
         self.get_logger().info("Finish")
