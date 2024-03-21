@@ -4,7 +4,7 @@ from launch.actions import IncludeLaunchDescription, RegisterEventHandler, Decla
 from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnIncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, TextSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 
@@ -42,7 +42,11 @@ def generate_launch_description() -> LaunchDescription:
     )
 
 
-    arg_name = DeclareLaunchArgument('name', default_value='eih_cam1')
+    arg_name = DeclareLaunchArgument('name',             
+                default_value=PathJoinSubstitution([
+                FindPackageShare('paradocs_control'),  # Finds the install/share directory for your package
+                TextSubstitution(text='config/eih_cam1')  # Appends the relative path to your file
+            ]),)
 
     handeye_publisher = Node(package='easy_handeye2', executable='handeye_publisher', name='handeye_publisher', parameters=[{
         'name': LaunchConfiguration('name'),

@@ -11,11 +11,17 @@ find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(moveit_ros_planning_interface)
+find_package(moveit_msgs REQUIRED)
 
 # Include Cpp "include" directory
 include_directories(include)
 
 # Create Cpp executable
+add_executable(hello_moveit src/hello_moveit.cpp)
+ament_target_dependencies(hello_moveit rclcpp moveit_ros_planning_interface)
+add_executable(shivi src/shivangi_test.cpp)
+ament_target_dependencies(shivi rclcpp moveit_ros_planning_interface moveit_msgs)
 add_executable(talker src/publisher_member_function.cpp)
 ament_target_dependencies(talker rclcpp std_msgs)
 add_executable(listener src/subscriber_member_function.cpp)
@@ -26,6 +32,8 @@ install(TARGETS
   # point_cloud_saver
   talker
   listener
+  shivi
+  hello_moveit
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -38,12 +46,14 @@ install(PROGRAMS
   scripts/publisher_member_function.py
   scripts/subscriber_member_function.py
   scripts/point_cloud_saver.py
+  scripts/open3d_pipeline.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
 # Install all launch file
 install(DIRECTORY
   launch
+  config
   DESTINATION share/${PROJECT_NAME}
 )
 
