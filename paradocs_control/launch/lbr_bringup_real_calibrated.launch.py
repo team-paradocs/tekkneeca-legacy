@@ -32,7 +32,7 @@ def generate_launch_description() -> LaunchDescription:
             PythonLaunchDescriptionSource(
                 PathJoinSubstitution(
                     [
-                        FindPackageShare("paradocs_controls"),
+                        FindPackageShare("paradocs_control"),
                         "launch",
                         "rs_launch.py",
                     ]

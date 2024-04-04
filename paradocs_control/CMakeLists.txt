@@ -20,6 +20,8 @@ include_directories(include)
 # Create Cpp executable
 add_executable(hello_moveit src/hello_moveit.cpp)
 ament_target_dependencies(hello_moveit rclcpp moveit_ros_planning_interface)
+add_executable(static_obstacles src/static_obstacles.cpp)
+ament_target_dependencies(static_obstacles rclcpp moveit_ros_planning_interface)
 add_executable(talker src/publisher_member_function.cpp)
 ament_target_dependencies(talker rclcpp std_msgs)
 add_executable(listener src/subscriber_member_function.cpp)
@@ -31,6 +33,7 @@ install(TARGETS
   talker
   listener
   hello_moveit
+  static_obstacles
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -44,6 +47,7 @@ install(PROGRAMS
   scripts/subscriber_member_function.py
   scripts/point_cloud_saver.py
   scripts/open3d_pipeline.py
+  scripts/playground.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
