@@ -25,5 +25,5 @@ Assistive Robot for Total Knee Arthroplasty
 
 - source environment
 
-        source ~/<ros2_ws>/src/tekkneeca/install/setup.bash
+        source ~/<ros2_ws>/install/setup.bash
 
