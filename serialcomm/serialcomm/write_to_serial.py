@@ -19,6 +19,7 @@ class TestSub(Node):
     def subscriber_callback(self, msg):
         self.get_logger().info("Heard "+msg.data)
         arduino.write(msg.data.encode())
+        self.get_logger().info(arduino.readline())
 
 
 def main(args=None):

@@ -47,7 +47,7 @@ install(PROGRAMS
   scripts/subscriber_member_function.py
   scripts/point_cloud_saver.py
   scripts/open3d_pipeline.py
-  scripts/playground.py
+  scripts/drill_pose_transformer.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

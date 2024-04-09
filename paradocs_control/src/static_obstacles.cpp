@@ -30,7 +30,7 @@ int drill(const geometry_msgs::msg::PoseStamped msg){
   RCLCPP_INFO_STREAM(rclcpp::get_logger("static_obstacles"),"Position: [" << pose.position.x << ", " << pose.position.y << ", " << pose.position.z << "] "
                 << "Orientation: [" << pose.orientation.x << ", " << pose.orientation.y << ", " << pose.orientation.z << ", " << pose.orientation.w << "]");
   
-  //cartesian planning
+  // cartesian planning
   const double jump_threshold = 0.0;
   const double eef_step = 0.01;
   moveit_msgs::msg::RobotTrajectory trajectory;
@@ -44,7 +44,8 @@ int drill(const geometry_msgs::msg::PoseStamped msg){
   Eigen::Matrix3d rotation_matrix = quat.toRotationMatrix();
 
   // Create a vector representing the direction to move in
-  float drill_length = 0.1;
+  float drill_length = 0.02;
+  int drill_points = 30;
   Eigen::Vector3d direction(0, 0, drill_length);
 
   // Multiply the rotation matrix by the direction vector
@@ -61,14 +62,86 @@ int drill(const geometry_msgs::msg::PoseStamped msg){
 
   RCLCPP_INFO_STREAM(rclcpp::get_logger("static_obstacles"),"Position: [" << new_msg.position.x << ", " << new_msg.position.y << ", " << new_msg.position.z << "] "
                 << "Orientation: [" << new_msg.orientation.x << ", " << new_msg.orientation.y << ", " << new_msg.orientation.z << ", " << new_msg.orientation.w << "]");
-  waypoints.push_back(new_msg);
+  // waypoints.push_back(new_msg);
 
-  move_group_interface->setMaxVelocityScalingFactor	(	0.1)	;
-  double fraction = move_group_interface->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+  // Interpolate drill_points number of points between start and end pose
+  std::vector<geometry_msgs::msg::Pose> interpolated_poses;
+  for (int i = 0; i <= drill_points; i++) {
+    geometry_msgs::msg::Pose interpolated_pose;
+    float ratio = static_cast<float>(i) / drill_points;
+
+    // Interpolate position
+    interpolated_pose.position.x = pose.position.x + ratio * (new_msg.position.x - pose.position.x);
+    interpolated_pose.position.y = pose.position.y + ratio * (new_msg.position.y - pose.position.y);
+    interpolated_pose.position.z = pose.position.z + ratio * (new_msg.position.z - pose.position.z);
+
+    // Orientation remains the same
+    interpolated_pose.orientation = pose.orientation;
+
+    interpolated_poses.push_back(interpolated_pose);
+    waypoints.push_back(interpolated_pose);
+  }
   
-  move_group_interface->execute(trajectory);
-  // move_group_interface->setMaxVelocityScalingFactor	(	1 )	;
-  RCLCPP_ERROR(rclcpp::get_logger("static_obstacles"), "done");
+  // for (int i=0; i<drill_points; i++){
+  //   RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Drilling");
+  //     geometry_msgs::msg::PoseStamped gt_pose;
+  //     gt_pose.header.frame_id = "world";
+  //     gt_pose.header.stamp = node->get_clock()->now();
+  //     gt_pose.pose = interpolated_poses[i];
+
+  //     move_group_interface->setPoseTarget(gt_pose);
+
+  //     moveit::planning_interface::MoveGroupInterface::Plan plan;
+  //     bool success = static_cast<bool>(move_group_interface->plan(plan));
+
+  //     if (success) {
+  //       move_group_interface->execute(plan);
+        
+  //     } else {
+  //       RCLCPP_ERROR(rclcpp::get_logger("static_obstacles"), "Planning failed!");
+  //     }
+
+  // }
+  // cartesian planning
+  // ...
+
+  // Interpolate drill_points number of points between start and end pose
+  // ...
+
+  // User confirmation
+  // char user_input;
+  // std::cout << "Do you want to proceed? (y/n): ";
+  // std::cin >> user_input;
+  // if (user_input != 'n' && user_input != 'N') {
+  //   std::cout << "Cancelling...\n";
+  //   return 1;
+  // }
+
+  //drill in 
+  for (int i=0; i<drill_points; i++){
+    waypoints.clear();
+    // RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Drilling");
+    waypoints.push_back(interpolated_poses[i]);
+    // move_group_interface->setMaxVelocityScalingFactor	(	0.1)	;
+    double fraction = move_group_interface->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+    
+    move_group_interface->execute(trajectory);
+    // // move_group_interface->setMaxVelocityScalingFactor	(	1 )	;
+    // RCLCPP_ERROR(rclcpp::get_logger("static_obstacles"), "done");
+  }
+
+  //drill out 
+  for (int i=drill_points; i>0; i--){
+    waypoints.clear();
+    // RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Drilling");
+    waypoints.push_back(interpolated_poses[i]);
+    // move_group_interface->setMaxVelocityScalingFactor	(	0.1)	;
+    double fraction = move_group_interface->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+    
+    move_group_interface->execute(trajectory);
+    // // move_group_interface->setMaxVelocityScalingFactor	(	1 )	;
+    // RCLCPP_ERROR(rclcpp::get_logger("static_obstacles"), "done");
+  }
 
   return 0;
 
@@ -121,12 +194,8 @@ void topic_callback(const geometry_msgs::msg::Pose msg)
     auto message = std_msgs::msg::String();
       message.data = "drill" ;
     publisher_->publish(message);
-    // publisher_->publish("drill");
-    
-    // publisher_->publish("drill");
-    // publisher_->
-    //put stop here after delay
-    rclcpp::sleep_for(std::chrono::seconds(5));
+    drill(gt_pose);
+    RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Drill done");
     message.data = "stop" ;
     publisher_->publish(message);
 
@@ -134,8 +203,6 @@ void topic_callback(const geometry_msgs::msg::Pose msg)
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("static_obstacles"), "Planning failed!");
   }
-
-  // drill(gt_pose);
 }
 
 int main(int argc, char * argv[])
@@ -219,7 +286,9 @@ int main(int argc, char * argv[])
   primitive.dimensions.resize(3);
   primitive.dimensions[primitive.BOX_X] = 0.2;
   primitive.dimensions[primitive.BOX_Y] = 0.1;
-  primitive.dimensions[primitive.BOX_Z] = 0.5;
+  // primitive.dimensions[primitive.BOX_Z] = 0.5;
+  primitive.dimensions[primitive.BOX_Z] = 0.7;
+
 
   // Define the pose of the box (relative to the frame_id)
   geometry_msgs::msg::Pose box_pose;
