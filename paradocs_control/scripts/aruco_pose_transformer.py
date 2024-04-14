@@ -31,6 +31,7 @@ class PoseTransformer(Node):
         transform = self.tf_buffer.lookup_transform('lbr/link_0', msg.header.frame_id, rclpy.time.Time())
         print("transofmr", transform)
         transformed_pose = tf2_geometry_msgs.do_transform_pose(pose, transform)
+        print("transformed_pose", transformed_pose)
         transformed_pose.orientation.x = 0.0
         transformed_pose.orientation.y = 1.0
         transformed_pose.orientation.z = 0.0

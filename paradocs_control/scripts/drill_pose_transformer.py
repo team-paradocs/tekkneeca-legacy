@@ -23,7 +23,7 @@ class PoseTransformer(Node):
         pose = Pose()
         pose.position = msg.pose.position
         pose.orientation = msg.pose.orientation
-        self.publisher_.publish(pose)
+        # self.publisher_.publish(pose)
         # try:
         # frames = self.tf_buffer.all_frames_as_string()
         # print(frames)

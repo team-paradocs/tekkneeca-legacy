@@ -48,6 +48,7 @@ install(PROGRAMS
   scripts/point_cloud_saver.py
   scripts/open3d_pipeline.py
   scripts/drill_pose_transformer.py
+  scripts/aruco_pose_transformer.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

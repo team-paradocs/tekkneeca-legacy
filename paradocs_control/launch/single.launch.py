@@ -25,6 +25,7 @@ def launch_setup(context, *args, **kwargs):
         parameters=[aruco_single_params],
         remappings=[('/camera_info', '/camera/color/camera_info'),
                     ('/image', '/camera/color/image_rect_raw')],
+                    # ('/image', '/camera/aligned_depth_to_color/image_raw')],
     )
 
     return [aruco_single]

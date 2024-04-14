@@ -18,20 +18,6 @@ def generate_launch_description() -> LaunchDescription:
             PythonLaunchDescriptionSource(
                 PathJoinSubstitution(
                     [
-                        FindPackageShare("lbr_bringup"),
-                        "launch",
-                        "real.launch.py",
-                    ]
-                )
-            ),
-        )
-    )
-
-    ld.add_action(
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                PathJoinSubstitution(
-                    [
                         FindPackageShare("paradocs_control"),
                         "launch",
                         "rs_launch.py",
@@ -40,6 +26,7 @@ def generate_launch_description() -> LaunchDescription:
             ),
         )
     )
+
 
     arg_name = DeclareLaunchArgument('name',             
                 default_value=PathJoinSubstitution([
@@ -53,27 +40,4 @@ def generate_launch_description() -> LaunchDescription:
 
     ld.add_action(arg_name)
     ld.add_action(handeye_publisher) 
-
-    ld.add_action(
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare("paradocs_control"),
-                        "launch",
-                        "static_obstacles.launch.py",
-                    ]
-                )
-            ),
-        )
-    )
-
-
-    # now testing aruco_pose, uncomment when doing the drill_pose
-    drill_pose_transformer = Node(package='paradocs_control', executable='drill_pose_transformer.py', name='pose_transformer')
-    ld.add_action(drill_pose_transformer)
-
-    serial_writer = Node(package='serialcomm', executable='serialwriter_exec', name='serial_writer')
-    ld.add_action(serial_writer)
-
     return ld
