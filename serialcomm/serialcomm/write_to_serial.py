@@ -2,7 +2,7 @@ import rclpy
 from std_msgs.msg import String
 from rclpy.node import Node
 import serial
-arduino=serial.Serial('/dev/ttyACM0', 115200)
+arduino=serial.Serial('/dev/ttyACM0', 9600)
 
 
 class TestSub(Node):
@@ -18,6 +18,8 @@ class TestSub(Node):
 
     def subscriber_callback(self, msg):
         self.get_logger().info("Heard "+msg.data)
+        arduino.write(msg.data.encode())
+        arduino.write(msg.data.encode())
         arduino.write(msg.data.encode())
         self.get_logger().info(arduino.readline())
 
