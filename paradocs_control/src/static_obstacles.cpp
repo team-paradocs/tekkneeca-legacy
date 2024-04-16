@@ -51,7 +51,8 @@ int drillProcess(const geometry_msgs::msg::Pose msg){
 
   RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "in drill function");
   move_group_interface->setStartStateToCurrentState();
-  const geometry_msgs::msg::Pose pose = msg;
+  // const geometry_msgs::msg::Pose pose = msg;
+  geometry_msgs::msg::Pose pose = computePose(msg, -0.001);
   // print the received message as a string
 
   RCLCPP_INFO_STREAM(rclcpp::get_logger("static_obstacles"),"Position: [" << pose.position.x << ", " << pose.position.y << ", " << pose.position.z << "] "
@@ -66,7 +67,7 @@ int drillProcess(const geometry_msgs::msg::Pose msg){
 
   int drill_points = 30;
 
-  geometry_msgs::msg::Pose new_pose = computePose(pose, 0.03);
+  geometry_msgs::msg::Pose new_pose = computePose(msg, 0.020);
   // Interpolate drill_points number of points between start and end pose
   std::vector<geometry_msgs::msg::Pose> interpolated_poses;
   for (int i = 0; i <= drill_points; i++) {
@@ -85,9 +86,9 @@ int drillProcess(const geometry_msgs::msg::Pose msg){
     waypoints.push_back(interpolated_pose);
   }
 
-    auto message = std_msgs::msg::String();
-    message.data = "drill" ;
-    publisher_->publish(message);
+    // auto message = std_msgs::msg::String();
+    // message.data = "d" ;
+    // publisher_->publish(message);
 
 
   //drill in 
@@ -107,9 +108,9 @@ int drillProcess(const geometry_msgs::msg::Pose msg){
     move_group_interface->execute(trajectory);
   }
 
-    RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Drill done");
-    message.data = "stop" ;
-    publisher_->publish(message);
+    // RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Drill done");
+    // message.data = "s" ;
+    // publisher_->publish(message);
 
   return 0;
 
@@ -118,7 +119,7 @@ int drillProcess(const geometry_msgs::msg::Pose msg){
 
 
 // cartesian drill function
-int cartesianMotion(const geometry_msgs::msg::Pose intermediatePose, const geometry_msgs::msg::Pose goalPose){
+int cartesianMotion(const geometry_msgs::msg::Pose intermediatePose, const geometry_msgs::msg::Pose goalPose, int cartesian_points = 50){
 
   RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "in cartesian motion function");
   move_group_interface->setStartStateToCurrentState();
@@ -137,7 +138,7 @@ int cartesianMotion(const geometry_msgs::msg::Pose intermediatePose, const geome
 
 
 
-  int cartesian_points = 50;
+  // int cartesian_points = 50;
   // change thhe num,berr of points to interpolate
 
 
@@ -228,13 +229,36 @@ void goToGoal(const geometry_msgs::msg::Pose msg)
   RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "doneeeeeeeeeeeeeeeee");
   //cartesianMotion(new_pose, msg);
 
-  geometry_msgs::msg::Pose final_pose = computePose(msg, -0.011);
-  cartesianMotion(new_pose, final_pose);
+  //intermediate position 1.5cm away
+  geometry_msgs::msg::Pose final_pose = computePose(msg, -0.015);
+  //new pose is the intermediate position 5cm away
+  cartesianMotion(new_pose, final_pose, 50);
 
 
   rclcpp::sleep_for(std::chrono::seconds(1));
   RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "starting drill motiuon");
-  // drillProcess(msg);
+  auto message = std_msgs::msg::String();
+  message.data = "d" ;
+  publisher_->publish(message);
+
+  //touch bone pose is the position 1mm away
+  geometry_msgs::msg::Pose touch_bone_pose = computePose(msg, -0.001);
+  //final_pose is the position 1.5cm away
+  cartesianMotion(final_pose, touch_bone_pose, 15);
+  rclcpp::sleep_for(std::chrono::seconds(1));
+
+
+  drillProcess(msg);
+
+  rclcpp::sleep_for(std::chrono::seconds(1));
+
+  //go from the touch_bone_pose to the pose that is 1.5cm away
+  cartesianMotion(touch_bone_pose, final_pose, 15);
+
+  RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Drill done");
+  message.data = "s" ;
+  publisher_->publish(message);
+
   // gt_pose.header.frame_id = "world";
   // gt_pose.header.stamp = node->get_clock()->now();
   // move_group_interface->setPoseTarget(gt_pose);
