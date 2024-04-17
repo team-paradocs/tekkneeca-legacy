@@ -200,7 +200,7 @@ void goToGoal(const geometry_msgs::msg::Pose msg)
   // move_group_interface->setStartStateToCurrentState();
 
 
-  geometry_msgs::msg::Pose new_pose = computePose(msg, -0.05);
+  geometry_msgs::msg::Pose new_pose = computePose(msg, -0.07);
 
   geometry_msgs::msg::PoseStamped gt_pose;
   
@@ -232,7 +232,7 @@ void goToGoal(const geometry_msgs::msg::Pose msg)
   //intermediate position 1.5cm away
   geometry_msgs::msg::Pose final_pose = computePose(msg, -0.015);
   //new pose is the intermediate position 5cm away
-  cartesianMotion(new_pose, final_pose, 50);
+  cartesianMotion(new_pose, final_pose, 70);
 
 
   rclcpp::sleep_for(std::chrono::seconds(1));
