@@ -1,23 +1,23 @@
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
-// #include <geometry_msgs/msg/pose.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
-// #include <moveit/moveit_commander.h>
 #include <Eigen/Geometry>
 #include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/int32.hpp"
 #include <string>
-// #include <moveit_visual_tools/moveit_visual_tools.h>
+#include "rclcpp/wait_for_message.hpp"
 
-// rclcpp::Logger* logger;
-
-// moveit::planning_interface::MoveGroupInterface move_group_interface;
-
-// Declare a global pointer for MoveGroupInterface for ease of use in this example
+// Global pointers and variables
 std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_interface;
 std::shared_ptr<rclcpp::Node> node;
 rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
+geometry_msgs::msg::Pose home_pose; 
+float x_offset = 0.002;
+float y_offset = 0.008;
+int plan_flag = 0;
 
+int testing_mode = 0;
 
 geometry_msgs::msg::Pose computePose (const geometry_msgs::msg::Pose pose, float length = 0.02)
 {
@@ -34,8 +34,8 @@ geometry_msgs::msg::Pose computePose (const geometry_msgs::msg::Pose pose, float
 
   // Add the result to the original position to get the new position
   geometry_msgs::msg::Pose new_pose;
-  new_pose.position.x = pose.position.x + result(0) - 0.003;
-  new_pose.position.y = pose.position.y + result(1) + 0.008; 
+  new_pose.position.x = pose.position.x + result(0) - x_offset;
+  new_pose.position.y = pose.position.y + result(1) + y_offset; 
   new_pose.position.z = pose.position.z + result(2);
 
   // The orientation remains the same
@@ -46,15 +46,14 @@ geometry_msgs::msg::Pose computePose (const geometry_msgs::msg::Pose pose, float
   return new_pose;
 
 }
-// cartesian drill function
+
 int drillProcess(const geometry_msgs::msg::Pose msg){
 
   RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "in drill function");
   move_group_interface->setStartStateToCurrentState();
-  // const geometry_msgs::msg::Pose pose = msg;
   geometry_msgs::msg::Pose pose = computePose(msg, -0.001);
+  
   // print the received message as a string
-
   RCLCPP_INFO_STREAM(rclcpp::get_logger("static_obstacles"),"Position: [" << pose.position.x << ", " << pose.position.y << ", " << pose.position.z << "] "
                 << "Orientation: [" << pose.orientation.x << ", " << pose.orientation.y << ", " << pose.orientation.z << ", " << pose.orientation.w << "]");
   
@@ -65,9 +64,9 @@ int drillProcess(const geometry_msgs::msg::Pose msg){
   std::vector<geometry_msgs::msg::Pose> waypoints;
   waypoints.push_back(pose);
 
-  int drill_points = 30;
+  int drill_points = 25;
 
-  geometry_msgs::msg::Pose new_pose = computePose(msg, 0.020);
+  geometry_msgs::msg::Pose new_pose = computePose(msg, 0.015);
   // Interpolate drill_points number of points between start and end pose
   std::vector<geometry_msgs::msg::Pose> interpolated_poses;
   for (int i = 0; i <= drill_points; i++) {
@@ -86,16 +85,12 @@ int drillProcess(const geometry_msgs::msg::Pose msg){
     waypoints.push_back(interpolated_pose);
   }
 
-    // auto message = std_msgs::msg::String();
-    // message.data = "d" ;
-    // publisher_->publish(message);
-
 
   //drill in 
   for (int i=0; i<drill_points; i++){
     waypoints.clear();
     waypoints.push_back(interpolated_poses[i]);
-    double fraction = move_group_interface->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+    move_group_interface->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
     move_group_interface->execute(trajectory);
 
   }
@@ -104,37 +99,36 @@ int drillProcess(const geometry_msgs::msg::Pose msg){
   for (int i=drill_points; i>0; i--){
     waypoints.clear();
     waypoints.push_back(interpolated_poses[i]);
-    double fraction = move_group_interface->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory); 
+    move_group_interface->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory); 
     move_group_interface->execute(trajectory);
   }
-
-    // RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Drill done");
-    // message.data = "s" ;
-    // publisher_->publish(message);
 
   return 0;
 
 }
 
-
-
-// cartesian drill function
 int cartesianMotion(const geometry_msgs::msg::Pose intermediatePose, const geometry_msgs::msg::Pose goalPose, int cartesian_points = 50){
 
   RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "in cartesian motion function");
   move_group_interface->setStartStateToCurrentState();
-  // print the received message as a string
 
-  // RCLCPP_INFO_STREAM(rclcpp::get_logger("static_obstacles"),"Position: [" << pose.position.x << ", " << pose.position.y << ", " << pose.position.z << "] "
-  //               << "Orientation: [" << pose.orientation.x << ", " << pose.orientation.y << ", " << pose.orientation.z << ", " << pose.orientation.w << "]");
-  
   // cartesian planning parameters
   const double jump_threshold = 0.0;
   const double eef_step = 0.01;
   moveit_msgs::msg::RobotTrajectory trajectory;
   std::vector<geometry_msgs::msg::Pose> waypoints;
-  // waypoints.push_back(pose);
 
+
+
+
+
+  // int cartesian_points = 50;
+  // change thhe num,berr of points to interpolate
+
+
+
+  // geometry_msgs::msg::Pose new_pose = computePose(pose, 0.02);
+  
 
 
 
@@ -170,7 +164,7 @@ int cartesianMotion(const geometry_msgs::msg::Pose intermediatePose, const geome
     RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "cartesian motion");
     waypoints.clear();
     waypoints.push_back(interpolated_poses[i]);
-    double fraction = move_group_interface->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+    move_group_interface->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
     move_group_interface->execute(trajectory);
 
   }
@@ -180,6 +174,61 @@ int cartesianMotion(const geometry_msgs::msg::Pose intermediatePose, const geome
 
 }
 
+int jointSpaceMotion(const geometry_msgs::msg::Pose goalPose)
+{
+  geometry_msgs::msg::PoseStamped gt_pose;
+  gt_pose.header.frame_id = "world";
+  gt_pose.header.stamp = node->get_clock()->now();
+  gt_pose.pose = goalPose;
+  geometry_msgs::msg::PoseStamped intermediate_pose=gt_pose;
+  move_group_interface->setPoseTarget(intermediate_pose);
+  move_group_interface->setPlanningTime(10.0);
+
+  moveit::planning_interface::MoveGroupInterface::Plan plan_intermediate;
+  bool success_intermediate = static_cast<bool>(move_group_interface->plan(plan_intermediate));
+
+  // char input;
+  // std::cout << "Press y to execute the plan:";
+  // std::cin >> input;
+  RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "please confirm the plan by setting the plan_flag to 1");
+  // while(plan_flag == 0){
+  //   // rclcpp::sleep_for(std::chrono::seconds(1));
+  //   RCLCPP_INFO_STREAM(rclcpp::get_logger("static_obstacles"), "plan_flag is "<< plan_flag<<",");
+  // }
+  std_msgs::msg::Int32 inpmsg;
+  bool recd = rclcpp::wait_for_message(inpmsg, node, "plan_flag", std::chrono::seconds(20));
+  if(recd)
+  {
+    plan_flag = inpmsg.data;
+  }
+  else
+  {
+    RCLCPP_ERROR(rclcpp::get_logger("static_obstacles"), "plan_flag not recd");
+    return 1;
+  }
+  
+
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("static_obstacles"), "plan_flag is "<< plan_flag<<",");
+  if(plan_flag == 1){
+    plan_flag = 0;
+    if (success_intermediate) {
+       RCLCPP_INFO_STREAM(rclcpp::get_logger("static_obstacles"), "executing "<< plan_flag<<",");
+      // draw_trajectory_tool_path(plan.trajectory);
+      move_group_interface->execute(plan_intermediate);
+    } else {
+      RCLCPP_ERROR(rclcpp::get_logger("static_obstacles"), "Planning failed!");
+    }
+    return 0;
+  }
+  else{
+    return 1;
+  }
+
+  
+
+    
+  return 0;
+}
 
 void goToGoal(const geometry_msgs::msg::Pose msg)
 {
@@ -188,115 +237,66 @@ void goToGoal(const geometry_msgs::msg::Pose msg)
     RCLCPP_ERROR(rclcpp::get_logger("static_obstacles"), "MoveGroupInterface is not initialized.");
     return;
   }
-  //cartesian
-  // const double jump_threshold = 0.0;
-  // const double eef_step = 0.01;
-  // moveit_msgs::msg::RobotTrajectory trajectory;
-  // std::vector<geometry_msgs::msg::Pose> waypoints;
-  // waypoints.push_back(msg);
-  // double fraction = move_group_interface->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);  
-  // move_group_interface->execute(trajectory);
-  // joint space planning
-  // move_group_interface->setStartStateToCurrentState();
+
+  // Compute an intermediate pose at a safe distance from the target
+  geometry_msgs::msg::Pose intermediate_pose_7cm = computePose(msg, -0.07);
+
+  // go to the intermediate pose from home
+  int success = jointSpaceMotion(intermediate_pose_7cm);
+  move_group_interface->setStartStateToCurrentState();
+
+  if(!success){
+    // go to an intermediate position 1.5cm away
+    rclcpp::sleep_for(std::chrono::seconds(1));
+    geometry_msgs::msg::Pose intermediate_pose_15mm = computePose(msg, -0.015);
+    cartesianMotion(intermediate_pose_7cm, intermediate_pose_15mm, 70);
+
+    // switch on the drill
+    rclcpp::sleep_for(std::chrono::seconds(1));
+    RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "starting drill motiuon");
+    auto message = std_msgs::msg::String();
+    message.data = "d" ;
+    publisher_->publish(message);
 
 
-  geometry_msgs::msg::Pose new_pose = computePose(msg, -0.07);
+    if(!testing_mode){
+      // touch the bone
+      geometry_msgs::msg::Pose touch_bone_pose = computePose(msg, -0.001);
+      cartesianMotion(intermediate_pose_15mm, touch_bone_pose, 15);
+      rclcpp::sleep_for(std::chrono::seconds(1));
 
-  geometry_msgs::msg::PoseStamped gt_pose;
-  
-  gt_pose.header.frame_id = "world";
-  gt_pose.header.stamp = node->get_clock()->now();
-  gt_pose.pose = new_pose;
-  geometry_msgs::msg::PoseStamped intermediate_pose=gt_pose;
-  // intermediate_pose.pose.orientation.x = 0.0;
-  // intermediate_pose.pose.orientation.y = 1.0;
-  // intermediate_pose.pose.orientation.z = 0.0;
-  // intermediate_pose.pose.orientation.w = 0.0;
-  move_group_interface->setPoseTarget(intermediate_pose);
-  move_group_interface->setPlanningTime(10.0);
+      // drill the bone
+      drillProcess(msg);
 
-  moveit::planning_interface::MoveGroupInterface::Plan plan_intermediate;
-  bool success_intermediate = static_cast<bool>(move_group_interface->plan(plan_intermediate));
-  if (success_intermediate) {
-    // draw_trajectory_tool_path(plan.trajectory);
-    move_group_interface->execute(plan_intermediate);
-  } else {
-    RCLCPP_ERROR(rclcpp::get_logger("static_obstacles"), "Planning failed!");
+      // go from the touch_bone_pose to the pose that is 1.5cm away
+      rclcpp::sleep_for(std::chrono::seconds(1));
+      cartesianMotion(touch_bone_pose, intermediate_pose_15mm, 15);
+
+    }
+
+    else{
+      rclcpp::sleep_for(std::chrono::seconds(5));
+    }
+    
+    // switch off the drill
+    RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Drill done");
+    message.data = "s" ;
+    publisher_->publish(message);
+
+    // go back to the intermediate pose 7cm away
+    rclcpp::sleep_for(std::chrono::seconds(1));
+    cartesianMotion(intermediate_pose_15mm, intermediate_pose_7cm, 70);
+
+    // // go back home
+    // rclcpp::sleep_for(std::chrono::seconds(1));
+    // jointSpaceMotion(home_pose);
   }
 
-  rclcpp::sleep_for(std::chrono::seconds(1));
-  move_group_interface->setStartStateToCurrentState();
-  RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "doneeeeeeeeeeeeeeeee");
-  //cartesianMotion(new_pose, msg);
-
-  //intermediate position 1.5cm away
-  geometry_msgs::msg::Pose final_pose = computePose(msg, -0.015);
-  //new pose is the intermediate position 5cm away
-  cartesianMotion(new_pose, final_pose, 70);
+}
 
 
-  rclcpp::sleep_for(std::chrono::seconds(1));
-  RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "starting drill motiuon");
-  auto message = std_msgs::msg::String();
-  message.data = "d" ;
-  publisher_->publish(message);
-
-  //touch bone pose is the position 1mm away
-  geometry_msgs::msg::Pose touch_bone_pose = computePose(msg, -0.001);
-  //final_pose is the position 1.5cm away
-  cartesianMotion(final_pose, touch_bone_pose, 15);
-  rclcpp::sleep_for(std::chrono::seconds(1));
-
-
-  drillProcess(msg);
-
-  rclcpp::sleep_for(std::chrono::seconds(1));
-
-  //go from the touch_bone_pose to the pose that is 1.5cm away
-  cartesianMotion(touch_bone_pose, final_pose, 15);
-
-  RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Drill done");
-  message.data = "s" ;
-  publisher_->publish(message);
-
-  // gt_pose.header.frame_id = "world";
-  // gt_pose.header.stamp = node->get_clock()->now();
-  // move_group_interface->setPoseTarget(gt_pose);
-  // move_group_interface->setPlanningTime(10.0);
-
-  
-  // float joints[] = {0.0, -30.0,0.5,0.0,0.0,-30,0.0};
-  // std::vector<double> joint_group_positions_arm;
-  // joint_group_positions_arm[0] = 0.00;  // Shoulder Pan
-  // joint_group_positions_arm[1] = -30.0;  // Shoulder Lift
-  // joint_group_positions_arm[2] = 0.0;  // Elbow
-  // joint_group_positions_arm[3] = 0.0;  // Wrist 1
-  // joint_group_positions_arm[4] = 0.0;  // Wrist 2
-  // joint_group_positions_arm[5] = -30.0;  // Wrist 3
-  // joint_group_positions_arm[6] = 0.0; 
-
-  // move_group_interface->setJointValueTarget(msg, "link_tool");
-  // move_group_interface->setMaxVelocityScalingFactor	(	0.1)	;
-
-  // moveit::planning_interface::MoveGroupInterface::Plan plan;
-  // bool success = static_cast<bool>(move_group_interface->plan(plan));
-
-  // if (success) {
-  //   // draw_trajectory_tool_path(plan.trajectory);
-  //   move_group_interface->execute(plan);
-  //   RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Plan was finally executed. Start Drill");
-  //   auto message = std_msgs::msg::String();
-  //   message.data = "drill" ;
-  //   publisher_->publish(message);
-  //   // Uncomment the following line to drill
-  //   // drill(gt_pose);
-  //   RCLCPP_INFO(rclcpp::get_logger("static_obstacles"), "Drill done");
-  //   message.data = "stop" ;
-  //   publisher_->publish(message);
-    
-  // } else {
-  //   RCLCPP_ERROR(rclcpp::get_logger("static_obstacles"), "Planning failed!");
-  // }
+void update_plan_flag(const std_msgs::msg::Int32::SharedPtr msg){
+  plan_flag = msg->data;
 }
 
 int main(int argc, char * argv[])
@@ -308,6 +308,14 @@ int main(int argc, char * argv[])
     "static_obstacles",
     rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
   );
+
+  home_pose.position.x = -0.4;
+  home_pose.position.y = 0.0;
+  home_pose.position.z = 0.365;
+  home_pose.orientation.x = 0.0;
+  home_pose.orientation.y = 1.0;
+  home_pose.orientation.z = 0.0;
+  home_pose.orientation.w = 0.0;
 
 
   // Create a ROS logger
@@ -415,6 +423,9 @@ int main(int argc, char * argv[])
 
   rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subscription_ = node->create_subscription<geometry_msgs::msg::Pose>(
   "moveit_goal", 10, goToGoal);
+
+  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscriber_ = node->create_subscription<std_msgs::msg::Int32>(
+  "plan_flag", 10, update_plan_flag);
    
   // Shutdown ROS
   rclcpp::spin(node);
